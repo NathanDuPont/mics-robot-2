@@ -31,6 +31,7 @@ void printLnDebug(char* msg) {
 
 Servo rotationMotor;
 Servo driverMotor;
+bool ret;
 
 void moveDriver(bool extend, int speed) {
 	digitalWrite(DRIVER_IN1_PIN, extend);
@@ -54,6 +55,10 @@ void setup(void) {
 	rotationMotor.attach(ROTATION_PWM_PIN);
 	driverMotor.attach(DRIVER_PWM_PIN);
 
+	ret = false;
+
+	digitalWrite(COLOR_LED_PIN, HIGH);
+
 	Serial.begin(9600);
 
 	if (tcs.begin()) {
@@ -62,8 +67,6 @@ void setup(void) {
 	Serial.println("No TCS34725 found ... check your connections");
 	while (1);
 	}
-
-	// Now we're ready to get readings!
 }
 
 void loop(void) {
@@ -73,7 +76,7 @@ void loop(void) {
 	// Color sensor
 	tcs.getRawData(&r, &g, &b, &c);
 	// colorTemp = tcs.calculateColorTemperature(r, g, b);
-	colorTemp = tcs.calculateColorTemperature_dn40(r, g, b, c);
+	// colorTemp = tcs.calculateColorTemperature_dn40(r, g, b, c);
 	lux = tcs.calculateLux(r, g, b);
 
 	// Serial.print("Color Temp: "); Serial.print(colorTemp, DEC); Serial.print(" K - ");
@@ -85,4 +88,62 @@ void loop(void) {
 	// Serial.println(" ");
 
 	moveDriver(true, 180);
+	tcs.getRawData(&r, &g, &b, &c);
+	lux = tcs.calculateLux(r, g, b);
+
+	delay(5000);
+
+	while (lux > 200) {
+		moveDriver(true, 180);
+		tcs.getRawData(&r, &g, &b, &c);
+		lux = tcs.calculateLux(r, g, b);
+	}
+
+
+	moveDriver(false, 180);
+	tcs.getRawData(&r, &g, &b, &c);
+	lux = tcs.calculateLux(r, g, b);
+
+	delay(5000);
+
+	while (lux > 200) {
+		moveDriver(false, 180);
+		tcs.getRawData(&r, &g, &b, &c);
+		lux = tcs.calculateLux(r, g, b);
+		Serial.println(lux, DEC);
+	}
+
+	exit(0);
+
+	// if (!ret && lux > 25) {
+	// 	moveDriver(true, 180);
+	// 	Serial.println("Case 1");
+	// } else if (ret && lux > 120) {
+	// 	moveDriver(false, 180);
+	// 	Serial.println("Case 2");
+	// } else if (ret) {
+	// 	moveDriver(false, 0);
+	// 	delay(200);
+	// 	moveRotation(false, 90);
+	// 	delay(300);
+	// 	moveRotation(false, 0);
+	// 	exit(0);
+	// 	Serial.println("Case 3");
+	// } else {
+	// 	moveDriver(true, 0);
+	// 	delay(200);
+	// 	moveRotation(true, 90);
+	// 	delay(300);
+	// 	moveRotation(true, 0);
+	// 	ret = true;
+	// 	moveDriver(false, 90);
+	// 	delay(200);
+	// 	Serial.println("Case 4");
+	// }
+
+	// moveDriver(true, 180);
+	// delay(35000);
+	// moveDriver(false, 180);
+	// delay(19000);
+	// exit(0);
 }
